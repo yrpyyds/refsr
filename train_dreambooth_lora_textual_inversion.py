@@ -144,7 +144,7 @@ def parse_args(input_args=None):
     parser.add_argument(
         "--ti_placeholder_token",
         type=str,
-        default='sksbackpack',
+        default='sks',
         help="Textual inversion 占位符 token，比如 <sks-backpack>。设置后会启用 textual inversion。",
     )
     parser.add_argument(
@@ -217,13 +217,13 @@ def parse_args(input_args=None):
     parser.add_argument(
         "--validation_prompt",
         type=str,
-        default="a boy with a sksbackpack",
+        default="a boy with a sks backpack",
         help="A prompt that is used during validation to verify that the model is learning.",
     )
     parser.add_argument(
         "--num_validation_images",
         type=int,
-        default=10,
+        default=5,
         help="Number of images that should be generated during validation with `validation_prompt`.",
     )
     parser.add_argument(
@@ -251,21 +251,21 @@ def parse_args(input_args=None):
             " class_data_dir, additional images will be sampled with class_prompt."
         ),
     )
-    output_dir_root = r'/root/autodl-tmp/sr/models/output/dreambooth/'
-    pattern = re.compile(r"lora-dreambooth-model(\d+)")
-    max_id = 0
-    for name in os.listdir(output_dir_root):
-        match = pattern.search(name)
-        if match:
-            num = int(match.group(1)) if match.group(1) else 0
-            if num > max_id:
-                max_id = num
-    new_model_name = f"lora-dreambooth-model{max_id + 1}" if max_id > 0 else "lora-dreambooth-model1"
-    output_dir = os.path.join(output_dir_root, new_model_name)
+    # output_dir_root = r'/root/autodl-tmp/sr/models/output_1109/dreambooth/'
+    # pattern = re.compile(r"lora-dreambooth-model(\d+)")
+    # max_id = 0
+    # for name in os.listdir(output_dir_root):
+    #     match = pattern.search(name)
+    #     if match:
+    #         num = int(match.group(1)) if match.group(1) else 0
+    #         if num > max_id:
+    #             max_id = num
+    # new_model_name = f"lora-dreambooth-model{max_id + 1}" if max_id > 0 else "lora-dreambooth-model1"
+    # output_dir = os.path.join(output_dir_root, new_model_name)
     parser.add_argument(
         "--output_dir",
         type=str,
-        default=output_dir,
+        default=None,
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
@@ -445,7 +445,7 @@ def parse_args(input_args=None):
     )
     parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
     parser.add_argument(
-        "--enable_xformers_memory_efficient_attention", action="store_true", help="Whether or not to use xformers."
+        "--enable_xformers_memory_efficient_attention", default=True
     )
     parser.add_argument(
         "--pre_compute_text_embeddings",
@@ -1390,8 +1390,11 @@ def main(args):
                                     shutil.rmtree(removing_checkpoint)
 
                         save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
+                        optimizer_ref = accelerator.optimizer # 不保存optimizer，太大了
+                        accelerator.optimizer = None
                         accelerator.save_state(save_path)
                         logger.info(f"Saved state to {save_path}")
+                        accelerator.optimizer = optimizer_ref
                         # === Save textual inversion embeddings ===
                         if ti_enabled and accelerator.is_main_process:
                             learned_embeds = (
