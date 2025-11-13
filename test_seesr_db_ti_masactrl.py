@@ -46,7 +46,7 @@ from torchvision import transforms
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms
-
+import diffusers
 logger = get_logger(__name__, log_level="INFO")
 
 
@@ -245,7 +245,7 @@ def load_seesr_pipeline(args, accelerator, enable_xformers_memory_efficient_atte
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_path, subfolder="vae")
     feature_extractor = CLIPImageProcessor.from_pretrained(f"{args.pretrained_model_path}/feature_extractor")
     unet = UNet2DConditionModel.from_pretrained(args.seesr_model_path, subfolder="unet")
-    unet_raw = UNet2DConditionModel.from_pretrained(args.pretrained_model_path, subfolder="unet")
+    unet_raw = diffusers.UNet2DConditionModel.from_pretrained(args.pretrained_model_path, subfolder="unet")
     if args.use_lora:
         print("loading lora...")
         unet.load_attn_procs(args.lora_path)
